@@ -28,6 +28,8 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new GeoLocGUIListener(), this);
+        getServer().getPluginManager().registerEvents(new GeoLocGUIPlayerListener(), this);
         getLogger().info("GeoLoc has been enabled!");
         saveDefaultConfig();
         loadPrefix();
@@ -45,21 +47,16 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
             if (args.length == 0) {
                 sender.sendMessage(replaceColorCodes(prefix) + "Usage: /geoloc <player>");
                 return true;
-            }
-
-            if (args.length == 1 && args[0].equalsIgnoreCase("gui")) {
-                if (sender.hasPermission("geoloc.gui")) {
-                    if (sender instanceof Player) {
-                        GeoLocGUI.openGUI((Player) sender, 1);
-                        return true;
-                    } else {
-                        sender.sendMessage(replaceColorCodes(prefix) + "You must be a player to use this command!");
-                    }
+            }else if (args.length == 1 && args[0].equalsIgnoreCase("gui")) {
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(replaceColorCodes(prefix) + "You must be a player to use this command!");
+                    return true;
                 }
-
-            }
-
-            if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+                if (sender.hasPermission("geoloc.gui")) {
+                    GeoLocGUI.openGUI((Player) sender, 1);
+                    return true;
+                }
+            } else if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
                 if (sender.hasPermission("geoloc.reload")) {
                     reloadConfig();
                     loadPrefix();
@@ -69,9 +66,7 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
                     sender.sendMessage(replaceColorCodes(prefix) + "No Permission!");
                     return true;
                 }
-            }
-
-            if (args.length == 1 && args[0].equalsIgnoreCase("toggle")) {
+            } else if (args.length == 1 && args[0].equalsIgnoreCase("toggle")) {
                 if (sender.hasPermission("geoloc.toggle")) {
                     FileConfiguration config = getConfig();
                     boolean autoRunOnJoin = config.getBoolean("auto-run-on-join");
@@ -83,19 +78,23 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
                     sender.sendMessage(replaceColorCodes(prefix) + "No Permission!");
                     return true;
                 }
-            }
+            }else if (sender.hasPermission("geoloc.use") && args.length == 1) {
+                if (sender instanceof Player) {
 
-            if (sender.hasPermission("geoloc.use")) {
-                Player target = getServer().getPlayer(args[0]);
-                if (target != null) {
-                    String ipAddress = target.getAddress().getAddress().getHostAddress();
-                    sender.sendMessage(replaceColorCodes(prefix) + "Geolocation for " + target.getName() + ":");
-                    sender.sendMessage(replaceColorCodes(prefix) + target.getName() + "'s IP address: " + ipAddress);
-                    sendGeoLocationMessage((Player) sender, target);
-                    return true;
+                    Player target = getServer().getPlayer(args[0]);
+                    Player player = (Player) sender;
+                    if (target != null) {
+                        String ipAddress = target.getAddress().getAddress().getHostAddress();
+                        sender.sendMessage(replaceColorCodes(prefix) + "Geolocation for " + target.getName() + ":");
+                        sender.sendMessage(replaceColorCodes(prefix) + target.getName() + "'s IP address: " + ipAddress);
+                        sendGeoLocationMessage(player, target);
+                        return true;
+                    } else {
+                        sender.sendMessage(replaceColorCodes(prefix) + "Player not found or not online.");
+                        return true;
+                    }
                 } else {
-                    sender.sendMessage(replaceColorCodes(prefix) + "Player not found or not online.");
-                    return true;
+                    sender.sendMessage(replaceColorCodes(prefix) + "You must be a player to use this command!");
                 }
             } else {
                 sender.sendMessage(replaceColorCodes(prefix) + "No Permission!");
