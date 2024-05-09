@@ -34,6 +34,8 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
         saveDefaultConfig();
         loadPrefix();
         checkForUpdates();
+        int pluginId = 21836;
+        Metrics metrics = new Metrics(this, pluginId);
     }
 
     @Override
