@@ -1,0 +1,10 @@
+name: GeoLoc
+author: TSERATO
+version: '1.4'
+main: dev.tserato.geoloc.GeoLocSpigot
+api-version: '1.20'
+
+commands:
+  geoloc:
+    description: "Use this to get the IP and Geolocation of players."
+    aliases: [geoloc, gl, geol, gloc]

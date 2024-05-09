@@ -1,0 +1,11 @@
+#Welcome to the GeoLoc Configuration File
+#Current Version: 1.4
+#Author: TSERATO
+#Discord: @tserato
+
+#Here you can change the prefix of the messages. You are able to use color codes like: &a or &c.
+prefix: "&c&lGeoloc&7&l>> &r"
+
+
+#Toggle on or off, if all players with geoloc.use permission will get the Geolocation of a joining player.
+auto-run-on-join: false
