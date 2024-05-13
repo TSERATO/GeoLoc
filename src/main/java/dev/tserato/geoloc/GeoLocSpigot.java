@@ -1,6 +1,9 @@
 package dev.tserato.geoloc;
 
 import com.google.gson.Gson;
+import me.clip.placeholderapi.PlaceholderAPI;
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -30,6 +33,9 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new GeoLocGUIListener(), this);
         getServer().getPluginManager().registerEvents(new GeoLocGUIPlayerListener(), this);
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new GeoLocPAPIExpansion().register();
+        }
         getLogger().info("GeoLoc has been enabled!");
         saveDefaultConfig();
         loadPrefix();
@@ -185,6 +191,8 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
         }
     }
 
+
+
     private void checkForUpdates() {
         try {
             int resourceId = 116496; // Replace with your actual resource ID
@@ -247,7 +255,7 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
         return 0;
     }
 
-    private static class GeoLocation {
+    static class GeoLocation {
         private String country;
         private String region;
         private String city;
