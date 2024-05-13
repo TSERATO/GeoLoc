@@ -160,35 +160,37 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
     }
 
     private void sendGeoLocationMessage(Player sender, Player player) {
-        if (player != null) {
-            try {
-                String ipAddress = player.getAddress().getAddress().getHostAddress();
-                String urlString = "http://ip-api.com/json/" + ipAddress;
-                URL url = new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                int responseCode = connection.getResponseCode();
-                if (responseCode == 200) {
-                    BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String inputLine;
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            if (player != null) {
+                try {
+                    String ipAddress = player.getAddress().getAddress().getHostAddress();
+                    String urlString = "http://ip-api.com/json/" + ipAddress;
+                    URL url = new URL(urlString);
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setRequestMethod("GET");
+                    int responseCode = connection.getResponseCode();
+                    if (responseCode == 200) {
+                        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                        StringBuilder response = new StringBuilder();
+                        String inputLine;
+                        while ((inputLine = in.readLine()) != null) {
+                            response.append(inputLine);
+                        }
+                        in.close();
+                        GeoLocation geoLocation = new Gson().fromJson(response.toString(), GeoLocation.class);
+                        if (sender.hasPermission("geoloc.use")) {
+                            sender.sendMessage(replaceColorCodes(prefix) + "Geolocation for " + player.getName() + ": " + geoLocation.getCountry() + ", " + geoLocation.getRegion() + ", " + geoLocation.getCity());
+                        }
+                        getLogger().info(replaceColorCodes(prefix) + "Geolocation for " + player.getName() + ": " + geoLocation.getCountry() + ", " + geoLocation.getRegion() + ", " + geoLocation.getCity());
                     }
-                    in.close();
-                    GeoLocation geoLocation = new Gson().fromJson(response.toString(), GeoLocation.class);
-                    if (sender.hasPermission("geoloc.use")) {
-                        sender.sendMessage(replaceColorCodes(prefix) + "Geolocation for " + player.getName() + ": " + geoLocation.getCountry() + ", " + geoLocation.getRegion() + ", " + geoLocation.getCity());
-                    }
-                    getLogger().info(replaceColorCodes(prefix) + "Geolocation for " + player.getName() + ": " + geoLocation.getCountry() + ", " + geoLocation.getRegion() + ", " + geoLocation.getCity());
+                    connection.disconnect();
+                } catch (IOException e) {
+                    getLogger().warning("Failed to retrieve geolocation data: " + e.getMessage());
                 }
-                connection.disconnect();
-            } catch (IOException e) {
-                getLogger().warning("Failed to retrieve geolocation data: " + e.getMessage());
+            } else {
+                getLogger().warning("Player is null!");
             }
-        } else {
-            getLogger().warning("Player is null!");
-        }
+        });
     }
 
 

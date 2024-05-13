@@ -35,7 +35,6 @@ public class GeoLocPAPIExpansion extends PlaceholderExpansion {
     public @Nullable String onRequest(OfflinePlayer offlinePlayer, @NotNull String params) {
         if (offlinePlayer != null && offlinePlayer.isOnline()) {
             Player player = offlinePlayer.getPlayer();
-            player.sendMessage("Event triggered.");
             if (player != null) {
                 try {
                     String ipAddress = player.getAddress().getAddress().getHostAddress();
@@ -53,16 +52,14 @@ public class GeoLocPAPIExpansion extends PlaceholderExpansion {
                         }
                         in.close();
                         GeoLocation geoLocation = new Gson().fromJson(response.toString(), GeoLocation.class);
-                        player.sendMessage(geoLocation.toString());
                         if (params.equalsIgnoreCase("city")) {
-                            player.sendMessage("CITY");
-                            return geoLocation.getCity();
+                            return String.valueOf(geoLocation.getCity());
                         } else if (params.equalsIgnoreCase("country")) {
-                            player.sendMessage("COUNTRY");
-                            return geoLocation.getCountry();
+                            return String.valueOf(geoLocation.getCountry());
                         } else if (params.equalsIgnoreCase("region")) {
-                            player.sendMessage("REGION");
-                            return geoLocation.getRegion();
+                            return String.valueOf(geoLocation.getRegion());
+                        } else if (params.equalsIgnoreCase("all")) {
+                            return String.valueOf(geoLocation.getCountry() + ", " + geoLocation.getRegion() + ", " + geoLocation.getCity());
                         }
                     }
                     connection.disconnect();
