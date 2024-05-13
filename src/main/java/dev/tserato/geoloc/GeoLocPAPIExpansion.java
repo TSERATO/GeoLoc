@@ -42,10 +42,11 @@ public class GeoLocPAPIExpansion extends PlaceholderExpansion {
     }
 
     @Override
-    public @Nullable String onRequest(OfflinePlayer offlinePlayer, @NotNull String params) {
+    public @Nullable String onRequest(OfflinePlayer offlinePlayer, String params) {
         if (offlinePlayer != null && offlinePlayer.isOnline()) {
             Player player = offlinePlayer.getPlayer();
             if (player != null) {
+                player.sendMessage("Placeholder requested.");
                 try {
                     String ipAddress = player.getAddress().getAddress().getHostAddress();
                     String urlString = "http://ip-api.com/json/" + ipAddress;
@@ -62,11 +63,15 @@ public class GeoLocPAPIExpansion extends PlaceholderExpansion {
                         }
                         in.close();
                         GeoLocation geoLocation = new Gson().fromJson(response.toString(), GeoLocation.class);
+                        player.sendMessage(geoLocation.getCity() + geoLocation.getCountry() + geoLocation.getRegion());
                         if (params.equalsIgnoreCase("geoloc_city")) {
+                            player.sendMessage("CITY TRIGGERED");
                             return geoLocation.getCity();
                         } else if (params.equalsIgnoreCase("geoloc_country")) {
+                            player.sendMessage("COUNTRY TRIGGERED");
                             return geoLocation.getCountry();
                         } else if (params.equalsIgnoreCase("geoloc_region")) {
+                            player.sendMessage("REGION TRIGGERED");
                             return geoLocation.getRegion();
                         }
                     }
