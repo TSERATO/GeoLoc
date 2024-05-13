@@ -32,21 +32,11 @@ public class GeoLocPAPIExpansion extends PlaceholderExpansion {
     }
 
     @Override
-    public boolean canRegister() {
-        return true;
-    }
-
-    @Override
-    public boolean persist() {
-        return true;
-    }
-
-    @Override
-    public @Nullable String onRequest(OfflinePlayer offlinePlayer, String params) {
+    public @Nullable String onRequest(OfflinePlayer offlinePlayer, @NotNull String params) {
         if (offlinePlayer != null && offlinePlayer.isOnline()) {
             Player player = offlinePlayer.getPlayer();
+            player.sendMessage("Event triggered.");
             if (player != null) {
-                player.sendMessage("Placeholder requested.");
                 try {
                     String ipAddress = player.getAddress().getAddress().getHostAddress();
                     String urlString = "http://ip-api.com/json/" + ipAddress;
@@ -63,15 +53,15 @@ public class GeoLocPAPIExpansion extends PlaceholderExpansion {
                         }
                         in.close();
                         GeoLocation geoLocation = new Gson().fromJson(response.toString(), GeoLocation.class);
-                        player.sendMessage(geoLocation.getCity() + geoLocation.getCountry() + geoLocation.getRegion());
-                        if (params.equalsIgnoreCase("geoloc_city")) {
-                            player.sendMessage("CITY TRIGGERED");
+                        player.sendMessage(geoLocation.toString());
+                        if (params.equalsIgnoreCase("city")) {
+                            player.sendMessage("CITY");
                             return geoLocation.getCity();
-                        } else if (params.equalsIgnoreCase("geoloc_country")) {
-                            player.sendMessage("COUNTRY TRIGGERED");
+                        } else if (params.equalsIgnoreCase("country")) {
+                            player.sendMessage("COUNTRY");
                             return geoLocation.getCountry();
-                        } else if (params.equalsIgnoreCase("geoloc_region")) {
-                            player.sendMessage("REGION TRIGGERED");
+                        } else if (params.equalsIgnoreCase("region")) {
+                            player.sendMessage("REGION");
                             return geoLocation.getRegion();
                         }
                     }
