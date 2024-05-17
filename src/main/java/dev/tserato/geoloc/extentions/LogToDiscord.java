@@ -166,7 +166,6 @@ public class LogToDiscord implements Listener {
         countryCodes.put("Namibia", "NA");
         countryCodes.put("Nauru", "NR");
         countryCodes.put("Nepal", "NP");
-        countryCodes.put("Netherlands", "NL");
         countryCodes.put("New Zealand", "NZ");
         countryCodes.put("Nicaragua", "NI");
         countryCodes.put("Niger", "NE");
@@ -217,6 +216,7 @@ public class LogToDiscord implements Listener {
         countryCodes.put("Tajikistan", "TJ");
         countryCodes.put("Tanzania", "TZ");
         countryCodes.put("Thailand", "TH");
+        countryCodes.put("The Netherlands", "NL");
         countryCodes.put("Timor-Leste", "TL");
         countryCodes.put("Togo", "TG");
         countryCodes.put("Tonga", "TO");
