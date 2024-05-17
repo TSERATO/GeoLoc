@@ -1,8 +1,12 @@
 package dev.tserato.geoloc;
 
 import com.google.gson.Gson;
-import me.clip.placeholderapi.PlaceholderAPI;
-import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import dev.tserato.geoloc.extentions.GeoLocPAPIExpansion;
+import dev.tserato.geoloc.extentions.LogToDiscord;
+import dev.tserato.geoloc.extentions.Metrics;
+import dev.tserato.geoloc.gui.GeoLocGUI;
+import dev.tserato.geoloc.gui.GeoLocGUIListener;
+import dev.tserato.geoloc.gui.GeoLocGUIPlayerListener;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -19,7 +23,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +30,7 @@ import java.util.regex.Pattern;
 public class GeoLocSpigot extends JavaPlugin implements Listener {
     private String prefix;
     private final Pattern colorPattern = Pattern.compile("(?i)&([0-9A-FK-OR])");
+    private static GeoLocSpigot instance;
 
     @Override
     public void onEnable() {
@@ -39,9 +43,13 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
         getLogger().info("GeoLoc has been enabled!");
         saveDefaultConfig();
         loadPrefix();
-        checkForUpdates();
+        checkForUpdates(null);
+        instance = this;
         int pluginId = 21836;
-        Metrics metrics = new Metrics(this, pluginId);
+        new Metrics(this, pluginId);
+
+        FileConfiguration config = getConfig();
+        getServer().getPluginManager().registerEvents(new LogToDiscord(config), this);
     }
 
     @Override
@@ -49,67 +57,85 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
         getLogger().info("GeoLoc has been disabled!");
     }
 
+    public static GeoLocSpigot getInstance() {
+        return instance;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("geoloc")) {
-            if (args.length == 0) {
-                sender.sendMessage(replaceColorCodes(prefix) + "Usage: /geoloc <player>");
-                return true;
-            }else if (args.length == 1 && args[0].equalsIgnoreCase("gui")) {
+        if (!cmd.getName().equalsIgnoreCase("geoloc")) {
+            return false;
+        }
+
+        if (args.length == 0) {
+            sender.sendMessage(replaceColorCodes(prefix) + "Usage: /geoloc <player|gui|reload|toggle|version|v>");
+            return true;
+        }
+
+        switch (args[0].toLowerCase()) {
+            case "gui":
                 if (!(sender instanceof Player)) {
                     sender.sendMessage(replaceColorCodes(prefix) + "You must be a player to use this command!");
                     return true;
                 }
                 if (sender.hasPermission("geoloc.gui")) {
                     GeoLocGUI.openGUI((Player) sender, 1);
-                    return true;
                 }
-            } else if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+                break;
+
+            case "reload":
                 if (sender.hasPermission("geoloc.reload")) {
                     reloadConfig();
                     loadPrefix();
                     sender.sendMessage(replaceColorCodes(prefix) + "Config reloaded.");
-                    return true;
+
+                    boolean useDiscord = LogToDiscord.isUseDiscord();
+                    String discordWebhookUrl = LogToDiscord.getDiscordWebhookUrl();
                 } else {
                     sender.sendMessage(replaceColorCodes(prefix) + "No Permission!");
-                    return true;
                 }
-            } else if (args.length == 1 && args[0].equalsIgnoreCase("toggle")) {
+                break;
+
+            case "toggle":
                 if (sender.hasPermission("geoloc.toggle")) {
                     FileConfiguration config = getConfig();
                     boolean autoRunOnJoin = config.getBoolean("auto-run-on-join");
                     config.set("auto-run-on-join", !autoRunOnJoin);
                     saveConfig();
                     sender.sendMessage(replaceColorCodes(prefix) + "Auto-Message " + (autoRunOnJoin ? "off." : "on."));
-                    return true;
                 } else {
                     sender.sendMessage(replaceColorCodes(prefix) + "No Permission!");
-                    return true;
                 }
-            }else if (sender.hasPermission("geoloc.use") && args.length == 1) {
-                if (sender instanceof Player) {
+                break;
 
+            case "version":
+            case "v":
+                if (sender instanceof Player) {
+                    sender.sendMessage(replaceColorCodes(prefix) + "GeoLoc Plugin Details:");
+                    sender.sendMessage(replaceColorCodes("&7Version: &f" + getDescription().getVersion()));
+                    checkForUpdates((Player) sender);
+                } else {
+                    sender.sendMessage("You must be a player.");
+                }
+                break;
+
+            default:
+                if (sender.hasPermission("geoloc.use") && sender instanceof Player) {
                     Player target = getServer().getPlayer(args[0]);
-                    Player player = (Player) sender;
                     if (target != null) {
                         String ipAddress = target.getAddress().getAddress().getHostAddress();
                         sender.sendMessage(replaceColorCodes(prefix) + "Geolocation for " + target.getName() + ":");
                         sender.sendMessage(replaceColorCodes(prefix) + target.getName() + "'s IP address: " + ipAddress);
-                        sendGeoLocationMessage(player, target);
-                        return true;
+                        sendGeoLocationMessage((Player) sender, target);
                     } else {
                         sender.sendMessage(replaceColorCodes(prefix) + "Player not found or not online.");
-                        return true;
                     }
                 } else {
-                    sender.sendMessage(replaceColorCodes(prefix) + "You must be a player to use this command!");
+                    sender.sendMessage(replaceColorCodes(prefix) + "No Permission or you must be a player to use this command!");
                 }
-            } else {
-                sender.sendMessage(replaceColorCodes(prefix) + "No Permission!");
-                return true;
-            }
+                break;
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -119,6 +145,8 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
             completions.add("reload");
             completions.add("toggle");
             completions.add("gui");
+            completions.add("version");
+            completions.add("v");
         }
         return completions;
     }
@@ -126,9 +154,7 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player joinedPlayer = event.getPlayer();
-        Iterator<Player> iterator = (Iterator<Player>) getServer().getOnlinePlayers().iterator();
-        while (iterator.hasNext()) {
-            Player player = iterator.next();
+        for (Player player : getServer().getOnlinePlayers()) {
             if (player.hasPermission("geoloc.use")) {
                 FileConfiguration config = getConfig();
                 if (config.getBoolean("auto-run-on-join")) {
@@ -193,54 +219,36 @@ public class GeoLocSpigot extends JavaPlugin implements Listener {
         });
     }
 
-
-
-    private void checkForUpdates() {
-        try {
-            int resourceId = 116496; // Replace with your actual resource ID
-            String updateCheckUrl = "https://api.spigotmc.org/legacy/update.php?resource=" + resourceId;
-            URL url = new URL(updateCheckUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 200) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String version = in.readLine();
-                in.close();
-                String currentVersion = getDescription().getVersion();
-                if (compareVersions(currentVersion, version) < 0) {
-                    getLogger().warning("A new version of GeoLoc (v" + version + ") is available! You are currently running v" + currentVersion + ". Update at: https://www.spigotmc.org/resources/" + resourceId);
-                } else {
-                    getLogger().info("You are running the latest version of GeoLoc.");
-                }
-            }
-            connection.disconnect();
-        } catch (IOException e) {
-            getLogger().warning("Failed to check for updates: " + e.getMessage());
-        }
-    }
-
     private void checkForUpdates(Player player) {
-        try {
-            int resourceId = 116496;
-            String updateCheckUrl = "https://api.spigotmc.org/legacy/update.php?resource=" + resourceId;
-            URL url = new URL(updateCheckUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 200) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String version = in.readLine();
-                in.close();
-                String currentVersion = getDescription().getVersion();
-                if (compareVersions(currentVersion, version) < 0) {
-                    player.sendMessage("§6A new version of GeoLoc (v" + version + ") is available! You are currently running v" + currentVersion + ". Update at: §9https://www.spigotmc.org/resources/" + resourceId);
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                int resourceId = 116496;
+                String updateCheckUrl = "https://api.spigotmc.org/legacy/update.php?resource=" + resourceId;
+                URL url = new URL(updateCheckUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                int responseCode = connection.getResponseCode();
+                if (responseCode == 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    String version = in.readLine();
+                    in.close();
+                    String currentVersion = getDescription().getVersion();
+                    if (compareVersions(currentVersion, version) < 0) {
+                        String updateMessage = "A new version of GeoLoc (v" + version + ") is available! You are currently running v" + currentVersion + ". Update at: https://www.spigotmc.org/resources/" + resourceId;
+                        if (player != null) {
+                            player.sendMessage("§6" + updateMessage);
+                        } else {
+                            getLogger().warning(updateMessage);
+                        }
+                    } else if (player == null) {
+                        getLogger().info("You are running the latest version of GeoLoc.");
+                    }
                 }
+                connection.disconnect();
+            } catch (IOException e) {
+                getLogger().warning("Failed to check for updates: " + e.getMessage());
             }
-            connection.disconnect();
-        } catch (IOException e) {
-            getLogger().warning("Failed to check for updates: " + e.getMessage());
-        }
+        });
     }
 
     private int compareVersions(String version1, String version2) {

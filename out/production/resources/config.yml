@@ -1,5 +1,5 @@
 #Welcome to the GeoLoc Configuration File
-#Current Version: 1.7
+#Current Version: 2.0
 #Author: TSERATO
 #Discord: @tserato
 
@@ -9,3 +9,6 @@ prefix: "&c&lGeoloc&7&l>> &r"
 
 #Toggle on or off, if all players with geoloc.use permission will get the Geolocation of a joining player.
 auto-run-on-join: false
+
+use-discord: false
+webhook-url: "YOUR_WEBHOOK_URL_HERE"

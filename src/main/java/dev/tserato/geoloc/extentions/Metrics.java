@@ -12,7 +12,7 @@
  *
  * Violations will result in a ban of your plugin and account from bStats.
  */
-package dev.tserato.geoloc;
+package dev.tserato.geoloc.extentions;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;

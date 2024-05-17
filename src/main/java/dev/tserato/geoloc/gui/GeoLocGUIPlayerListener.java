@@ -1,4 +1,4 @@
-package dev.tserato.geoloc;
+package dev.tserato.geoloc.gui;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
