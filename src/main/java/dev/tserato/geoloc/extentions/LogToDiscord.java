@@ -2,8 +2,6 @@ package dev.tserato.geoloc.extentions;
 
 import com.google.gson.Gson;
 import dev.tserato.geoloc.GeoLocSpigot;
-import dev.tserato.geoloc.extentions.DiscordWebhook;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,16 +22,27 @@ public class LogToDiscord implements Listener {
 
     private static boolean useDiscord;
     private static String discordWebhookUrl;
+    private static String joinMessage;
+    private static String joinMessageColor;
+    private static String firstJoinMessage;
+    private static String firstJoinMessageColor;
     private static final Map<String, String> countryCodes = new HashMap<>();
 
     private final FileConfiguration config;
 
     public LogToDiscord(FileConfiguration config) {
         this.config = config;
+        loadDiscordSettings();
+        initCountryCodes();
+    }
+
+    public void loadDiscordSettings() {
         useDiscord = config.getBoolean("use-discord", false);
         discordWebhookUrl = config.getString("webhook-url", "");
-
-        initCountryCodes();
+        joinMessage = config.getString("discord-join-message", "Player {Player} joined us today from {Country}");
+        joinMessageColor = config.getString("discord-join-message-color", "#00FF00");
+        firstJoinMessage = config.getString("discord-first-join-message", "The new Player {Player} joined us today from {Country}");
+        firstJoinMessageColor = config.getString("discord-first-join-message-color", "#FFFF00");
     }
 
     public static boolean isUseDiscord() {
@@ -166,6 +175,7 @@ public class LogToDiscord implements Listener {
         countryCodes.put("Namibia", "NA");
         countryCodes.put("Nauru", "NR");
         countryCodes.put("Nepal", "NP");
+        countryCodes.put("Netherlands", "NL");
         countryCodes.put("New Zealand", "NZ");
         countryCodes.put("Nicaragua", "NI");
         countryCodes.put("Niger", "NE");
@@ -216,7 +226,6 @@ public class LogToDiscord implements Listener {
         countryCodes.put("Tajikistan", "TJ");
         countryCodes.put("Tanzania", "TZ");
         countryCodes.put("Thailand", "TH");
-        countryCodes.put("The Netherlands", "NL");
         countryCodes.put("Timor-Leste", "TL");
         countryCodes.put("Togo", "TG");
         countryCodes.put("Tonga", "TO");
@@ -242,26 +251,26 @@ public class LogToDiscord implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        if (player.hasPlayedBefore()) {
-            String ip = player.getAddress().getAddress().getHostAddress();
+        String ip = player.getAddress().getAddress().getHostAddress();
 
-            Bukkit.getScheduler().runTaskAsynchronously(GeoLocSpigot.getInstance(), () -> {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
                 String geoLocation = getGeoLocation(ip);
                 String flagUrl = getFlagUrl(geoLocation);
 
-                Bukkit.getScheduler().runTask(GeoLocSpigot.getInstance(), () -> logToDiscord(player.getName(), geoLocation, flagUrl));
-            });
-        } else if (!player.hasPlayedBefore()) {
-            String ip = player.getAddress().getAddress().getHostAddress();
-
-            Bukkit.getScheduler().runTaskAsynchronously(GeoLocSpigot.getInstance(), () -> {
-                String geoLocation = getGeoLocation(ip);
-                String flagUrl = getFlagUrl(geoLocation);
-
-                Bukkit.getScheduler().runTask(GeoLocSpigot.getInstance(), () -> logToDiscordNew(player.getName(), geoLocation, flagUrl));
-            });
-        }
-
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (player.hasPlayedBefore()) {
+                            logToDiscord(player.getName(), geoLocation, flagUrl, joinMessage, joinMessageColor);
+                        } else {
+                            logToDiscord(player.getName(), geoLocation, flagUrl, firstJoinMessage, firstJoinMessageColor);
+                        }
+                    }
+                }.runTask(GeoLocSpigot.getInstance());
+            }
+        }.runTaskAsynchronously(GeoLocSpigot.getInstance());
     }
 
     private static String getGeoLocation(String ipAddress) {
@@ -296,25 +305,18 @@ public class LogToDiscord implements Listener {
         return parts[0].trim();
     }
 
-    private static void logToDiscord(String playerName, String geoLocation, String flagUrl) {
+    private static void logToDiscord(String playerName, String geoLocation, String flagUrl, String messageTemplate, String color) {
         try {
             if (useDiscord && !discordWebhookUrl.isEmpty()) {
                 String country = extractCountry(geoLocation);
-                DiscordWebhook webhook = new DiscordWebhook(discordWebhookUrl);
-                webhook.addEmbed(new DiscordWebhook.EmbedObject().setTitle("Player Joined").setDescription("Player " + playerName + " joined from: " + country + "!").setColor(Color.GREEN).setImage(flagUrl));
-                webhook.execute();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+                String message = messageTemplate.replace("{Player}", playerName).replace("{Country}", country);
+                Color embedColor = Color.decode(color);
 
-    private static void logToDiscordNew(String playerName, String geoLocation, String flagUrl) {
-        try {
-            if (useDiscord && !discordWebhookUrl.isEmpty()) {
-                String country = extractCountry(geoLocation);
                 DiscordWebhook webhook = new DiscordWebhook(discordWebhookUrl);
-                webhook.addEmbed(new DiscordWebhook.EmbedObject().setTitle("New Player Joined").setDescription("New Player " + playerName + " joined from: " + country + "!").setColor(Color.YELLOW).setImage(flagUrl));
+                webhook.addEmbed(new DiscordWebhook.EmbedObject()
+                        .setDescription(message)
+                        .setColor(embedColor)
+                        .setImage(flagUrl));
                 webhook.execute();
             }
         } catch (Exception e) {
@@ -324,7 +326,7 @@ public class LogToDiscord implements Listener {
 
     private static class GeoLocation {
         private String country;
-        private String region;
+        private String regionName;
         private String city;
 
         public String getCountry() {
@@ -332,7 +334,7 @@ public class LogToDiscord implements Listener {
         }
 
         public String getRegion() {
-            return region;
+            return regionName;
         }
 
         public String getCity() {

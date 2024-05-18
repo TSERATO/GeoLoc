@@ -1,5 +1,5 @@
 #Welcome to the GeoLoc Configuration File
-#Current Version: 2.0
+#Current Version: 2.1
 #Author: TSERATO
 #Discord: @tserato
 
@@ -12,3 +12,8 @@ auto-run-on-join: false
 
 use-discord: false
 webhook-url: "YOUR_WEBHOOK_URL_HERE"
+discord-join-message: "Player {Player} joined us today from {Country}"
+discord-join-message-color: "#00FF00"  # Hex color code for GREEN
+
+discord-first-join-message: "The new Player {Player} joined us today from {Country}"
+discord-first-join-message-color: "#FFFF00"  # Hex color code for YELLOW

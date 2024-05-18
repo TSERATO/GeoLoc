@@ -1,6 +1,6 @@
 name: GeoLoc
 author: TSERATO
-version: '2.0'
+version: '2.1'
 main: dev.tserato.geoloc.GeoLocSpigot
 api-version: '1.20'
 softdepend:
@@ -9,4 +9,18 @@ softdepend:
 commands:
   geoloc:
     description: "Use this to get the IP and Geolocation of players."
+    permission: geoloc.use
     aliases: [geoloc, gl, geol, gloc]
+
+permissions:
+  geoloc.use:
+    description: "Permission to reload, to get the GeoLocation, to enter the webhook and to get the version of the plugin."
+    default: false
+
+  geoloc.gui:
+    description: "Permission for opening the GUI."
+    default: false
+
+  geoloc.toggle:
+    description: "Permission or the Auto-Message-On-Join."
+    default: false

@@ -28,12 +28,12 @@ public class GeoLocPAPIExpansion extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getAuthor() {
-        return "TSERATO";
+        return getAuthor();
     }
 
     @Override
     public @NotNull String getVersion() {
-        return "2.0";
+        return getVersion();
     }
 
     @Override
